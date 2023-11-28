@@ -146,53 +146,56 @@ const confirm1 = (e: any, routerProps: any) => {
           </TabMenu>
         </div>
         <div class="router-view">
-          <Transition>
-            <div
-              v-if="
-                router.currentRoute.value.path !== '/documentation' &&
-                steps.length !== 0
-              "
-            >
-              <Steps
-                :model="steps"
-                aria-label="Form Steps"
-                :readonly="false"
-                :pt="{
-                  menuitem: ({ context }) => ({
-                    class:
-                      isActive(context.item) && 'p-highlight p-steps-current',
-                  }),
-                }"
+          <div class="steps-container">
+            <Transition>
+              <div
+                v-if="
+                  router.currentRoute.value.path !== '/documentation' &&
+                  steps.length !== 0
+                "
               >
-                <template #item="{ label, item, index, props }">
-                  <router-link
-                    v-if="item.route"
-                    v-slot="routerProps"
-                    :to="item.route"
-                    custom
-                  >
+                <Steps
+                  :model="steps"
+                  aria-label="Form Steps"
+                  :readonly="false"
+                  :pt="{
+                    menuitem: ({ context }) => ({
+                      class:
+                        isActive(context.item) && 'p-highlight p-steps-current',
+                    }),
+                  }"
+                >
+                  <template #item="{ label, item, index, props }">
+                    <router-link
+                      v-if="item.route"
+                      v-slot="routerProps"
+                      :to="item.route"
+                      custom
+                    >
+                      <a
+                        :href="routerProps.href"
+                        v-bind="props.action"
+                        @click="($event) => routerProps.navigate($event)"
+                      >
+                        <span v-bind="props.step">{{ index + 1 }}</span>
+                        <span v-bind="props.label">{{ label }}</span>
+                      </a>
+                    </router-link>
                     <a
-                      :href="routerProps.href"
+                      v-else
+                      :href="item.url"
+                      :target="item.target"
                       v-bind="props.action"
-                      @click="($event) => routerProps.navigate($event)"
                     >
                       <span v-bind="props.step">{{ index + 1 }}</span>
                       <span v-bind="props.label">{{ label }}</span>
                     </a>
-                  </router-link>
-                  <a
-                    v-else
-                    :href="item.url"
-                    :target="item.target"
-                    v-bind="props.action"
-                  >
-                    <span v-bind="props.step">{{ index + 1 }}</span>
-                    <span v-bind="props.label">{{ label }}</span>
-                  </a>
-                </template>
-              </Steps>
-            </div>
-          </Transition>
+                  </template>
+                </Steps>
+              </div>
+            </Transition>
+          </div>
+
           <RouterView v-slot="{ Component }">
             <keep-alive>
               <component
@@ -209,6 +212,9 @@ const confirm1 = (e: any, routerProps: any) => {
 </template>
 
 <style scoped lang="scss">
+.steps-container {
+  height: 100px;
+}
 .v-enter-active,
 .v-leave-active {
   transition: opacity 0.5s ease;
