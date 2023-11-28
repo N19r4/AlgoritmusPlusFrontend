@@ -3,7 +3,7 @@ import { RouteLocationRaw, RouterView } from "vue-router";
 import TabMenu from "primevue/tabmenu";
 import Steps from "primevue/steps";
 import ConfirmDialog from "primevue/confirmdialog";
-import { ref, onMounted, watch, watchEffect } from "vue";
+import { ref, onMounted, watch, watchEffect, Ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
@@ -11,7 +11,7 @@ import { useToast } from "primevue/usetoast";
 const router = useRouter();
 const route = useRoute();
 
-const steps = ref([]);
+const steps: Ref<never[]> | Ref<{ label: string; route: string }[]> = ref([]);
 
 const isActive = (item: any) => {
   return item.route ? router.resolve(item.route).path === route.path : false;
