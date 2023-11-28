@@ -47,7 +47,7 @@ p {
   transition: 0.5s;
 
   &--highlighted {
-    background: #f8f3ff;
+    background: #fbcdff62;
   }
 
   &__hover:hover {
@@ -67,4 +67,17 @@ p {
     border: none;
     color: rgb(195, 179, 238) !important;
   }
+}
+
+.help-input {
+  display: flex !important;
+  flex-direction: column;
+  max-width: 15rem;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.p-slider,
+.p-slider-handle {
+  cursor: pointer !important;
 }
