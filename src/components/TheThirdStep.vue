@@ -7,6 +7,8 @@ onMounted(() => {
     loaderVisible.value = false;
   }, 5000);
 });
+
+const isCalculating = ref(false);
 </script>
 <template>
   <div class="center-on-screen">
@@ -14,9 +16,15 @@ onMounted(() => {
       <div class="blob"></div>
       <h2>Calculating...</h2>
     </div>
-    <div v-else>
-      <h2>Finished!</h2>
-    </div>
+    <!-- <div class="pause-button">
+      <i
+        @click="isCalculating = !isCalculating"
+        class="pi circled-icon"
+        :class="`${isCalculating ? 'pi-pause' : 'pi-replay'}`"
+        style="font-size: 3rem; color: #ba4cd6"
+      ></i>
+      <h2>{{ isCalculating ? "Stop" : "Continue" }}</h2>
+    </div> -->
   </div>
 </template>
 
@@ -27,6 +35,16 @@ onMounted(() => {
   flex-direction: column;
   justify-content: center;
   height: 70vh;
+  .pause-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .circled-icon {
+    border: 5px solid #ba4cd6;
+    border-radius: 50%;
+    padding: 1rem;
+  }
   .loader {
     display: flex;
     align-items: center;
