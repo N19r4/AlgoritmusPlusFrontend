@@ -84,12 +84,12 @@ const uploadFile = async () => {
 };
 
 const finishUpload = async () => {
-  if (uploadedFile.value.name.trim() === "") {
-    nameRequired.value = true;
-    return;
-  }
+  // if (uploadedFile.value.name.trim() === "") {
+  //   nameRequired.value = true;
+  //   return;
+  // }
 
-  nameRequired.value = false;
+  // nameRequired.value = false;
 
   if (
     items.value.map(({ name }) => name).includes(uploadedFile.value.name.trim())

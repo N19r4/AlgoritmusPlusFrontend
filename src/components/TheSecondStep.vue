@@ -96,6 +96,8 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
                       class="w-full"
                       :useGrouping="false"
                       :allowEmpty="false"
+                      readonly
+                      disabled
                     />
                   </div>
 
@@ -104,9 +106,10 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
                       selectedItemsStore.getParamsForChosenAlgorithm()[index]
                         .step
                     "
-                    :min="1"
+                    :min="0"
                     :max="100"
                     class="w-full"
+                    :step="10"
                   />
                 </div>
               </div>

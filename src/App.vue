@@ -59,7 +59,7 @@ const setDefaultParamsForAlgorithm = async () => {
     .then((res) => {
       return res.data.map((param: any) => ({
         ...param,
-        step: 1,
+        step: 0,
       }));
     });
 
