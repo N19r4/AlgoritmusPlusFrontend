@@ -38,6 +38,7 @@ const uploadedFile: Ref<{ name: string; path: string }> = ref({
 const items = computed(() => props.items);
 const isModalVisible = ref(false);
 const nameAlreadyExists = ref(false);
+const nameRequired = ref(false);
 
 const selectedItems: Ref<string[]> = ref([]);
 
@@ -83,6 +84,13 @@ const uploadFile = async () => {
 };
 
 const finishUpload = async () => {
+  if (uploadedFile.value.name.trim() === "") {
+    nameRequired.value = true;
+    return;
+  }
+
+  nameRequired.value = false;
+
   if (
     items.value.map(({ name }) => name).includes(uploadedFile.value.name.trim())
   ) {
@@ -130,15 +138,6 @@ const finishUpload = async () => {
       </div>
     </div>
     <div class="custom-card flex justify-content-center">
-      <!-- <FileUpload
-        mode="basic"
-        name="fileUpload"
-        accept=".pdf"
-        :maxFileSize="1000000"
-        :chooseLabel="`Upload new ${props.name}`"
-        :auto="true"
-        @select="onUpload"
-      /> -->
       <Button @click="isModalVisible = true"
         >Upload new {{ props.name }}</Button
       >
@@ -160,12 +159,15 @@ const finishUpload = async () => {
         id="Name"
         v-model="uploadedFile.name"
         aria-describedby="Name-help"
-        :class="{ 'p-invalid': nameAlreadyExists }"
+        :class="{ 'p-invalid': nameAlreadyExists || nameRequired }"
         :maxlength="30"
       />
     </div>
     <small class="p-error" id="text-error" v-if="nameAlreadyExists"
       >This name already exists.</small
+    >
+    <small class="p-error" id="text-error" v-if="nameRequired"
+      >Name is required.</small
     >
     <template #footer>
       <Button

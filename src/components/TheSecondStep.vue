@@ -106,7 +106,6 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
                     "
                     :min="1"
                     :max="100"
-                    :step="10"
                     class="w-full"
                   />
                 </div>
