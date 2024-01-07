@@ -7,7 +7,7 @@ export const useSelectedItemsStore = defineStore("selectedItemsStore", () => {
 
   const paramsForChosenAlgorithm: Ref<any> = ref();
 
-  let dimForChosenAlgorithm = 0;
+  let dimForChosenAlgorithm = 2;
 
   const setNewItems = (newItems: any) => {
     items.value = newItems;

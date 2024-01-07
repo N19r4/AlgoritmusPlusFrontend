@@ -49,15 +49,7 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
           };
         }
       });
-
-    // setTimeout(() => {
-    //   isCalculating.value = false;
-    //   calculatingResultMessage.value = {
-    //     severity: "success",
-    //     summary: "Success",
-    //     detail: "Calculation finished successfully.",
-    //   };
-    // }, 20000);
+    isCalculating.value = false;
   };
 
   const pauseCalculating = () => {
