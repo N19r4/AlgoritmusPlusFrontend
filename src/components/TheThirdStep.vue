@@ -1,50 +1,123 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
+import ProgressSpinner from "primevue/progressspinner";
+import { useCalculatingStore, useSelectedItemsStore } from "@/state";
+import { useToast } from "primevue/usetoast";
+import Toast from "primevue/toast";
+import SelectButton from "primevue/selectbutton";
 
-const loaderVisible = ref(true);
-onMounted(() => {
-  setTimeout(() => {
-    loaderVisible.value = false;
-  }, 5000);
+const toast = useToast();
+
+const showToastMessage = (
+  severity: "success" | "error" | "info" | "warn",
+  summary: string,
+  detail: string
+) => {
+  toast.add({
+    severity: severity,
+    summary: summary,
+    detail: detail,
+    life: 3000,
+  });
+};
+
+const calculatingStore = useCalculatingStore();
+const selectedItemsStore = useSelectedItemsStore();
+
+const isCalculating = computed(() => calculatingStore.getIsCalculating());
+const calculatingRes = computed(() =>
+  calculatingStore.getCalculatingResultMessage()
+);
+
+watch(calculatingRes, (newVal) => {
+  if (newVal) {
+    showToastMessage(newVal.severity, newVal.summary, newVal.detail);
+  }
 });
 
-const isCalculating = ref(false);
+const currentClickedButton = ref(null);
+const options = ref([
+  { value: "Resume", icon: "pi pi-play" },
+  { value: "Pause", icon: "pi pi-pause" },
+]);
+
+const changeCalculatingState = ({ value }: { value: string }) => {
+  if (value === "Resume") {
+    calculatingStore.startCalculating("");
+  } else if (value === "Pause") {
+    calculatingStore.pauseCalculating();
+  }
+};
+
+watch(currentClickedButton, (newVal) => {
+  if (newVal) {
+    changeCalculatingState(newVal);
+  }
+});
 </script>
 <template>
-  <div class="center-on-screen">
-    <div v-if="loaderVisible" class="loader">
-      <div class="blob"></div>
-      <h2>Calculating...</h2>
+  <Toast />
+  <div class="third-step">
+    <div class="center-on-screen">
+      <div v-if="isCalculating" class="loader">
+        <ProgressSpinner />
+        <h2>Calculating...</h2>
+      </div>
+      <div class="flex-column" v-else>
+        <i class="pi pi-power-off" style="font-size: 3rem; color: #ba4cd6"></i>
+        <h2>Calculating paused.</h2>
+      </div>
+      <SelectButton
+        v-model="currentClickedButton"
+        :options="options"
+        optionLabel="value"
+        dataKey="value"
+      >
+        <template #option="slotProps">
+          <i :class="slotProps.option.icon"></i>
+        </template>
+      </SelectButton>
     </div>
-    <!-- <div class="pause-button">
-      <i
-        @click="isCalculating = !isCalculating"
-        class="pi circled-icon"
-        :class="`${isCalculating ? 'pi-pause' : 'pi-replay'}`"
-        style="font-size: 3rem; color: #ba4cd6"
-      ></i>
-      <h2>{{ isCalculating ? "Stop" : "Continue" }}</h2>
-    </div> -->
+    <h2>Summary</h2>
+    <div class="summary">
+      <div
+        class="summary-item"
+        v-for="item in selectedItemsStore.getItems()"
+        :key="item.name"
+      >
+        <h3 class="bolded">Selected {{ item.name }}(s):</h3>
+        <p v-for="dll in item.dllsNames" :key="dll">
+          <i class="pi pi-check"></i> {{ dll }}
+        </p>
+      </div>
+      <div class="summary-item">
+        <h3 class="bolded">Dimension:</h3>
+        <p>{{ selectedItemsStore.getDimForChosenAlgorithm() }}</p>
+      </div>
+      <div class="summary-item">
+        <h3 class="bolded">Parameters:</h3>
+        <div class="summary-item-params">
+          <p v-if="selectedItemsStore.getParamsForChosenAlgorithm()">
+            {{
+              selectedItemsStore
+                .getParamsForChosenAlgorithm()
+                .map((param: any) => param.name)
+                .join(", ")
+            }}
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .center-on-screen {
+  height: 30vh;
   display: flex;
   align-items: center;
   flex-direction: column;
-  justify-content: center;
-  height: 70vh;
-  .pause-button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .circled-icon {
-    border: 5px solid #ba4cd6;
-    border-radius: 50%;
-    padding: 1rem;
-  }
+  justify-content: flex-end;
   .loader {
     display: flex;
     align-items: center;
@@ -53,6 +126,15 @@ const isCalculating = ref(false);
   h2 {
     color: #ba4cd6 !important;
   }
+
+  .flex-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+.third-step {
+  height: 70vh;
 }
 
 .blob {

@@ -1,59 +1,81 @@
 <script setup lang="ts">
+import axios, { AxiosError } from "axios";
 import { ListWithUpload } from ".";
 // import axios from "axios";
 
-import { Ref, ref, watch, defineEmits } from "vue";
+import { Ref, ref, watch, defineEmits, onMounted } from "vue";
 
 const emit = defineEmits(["new-items-selected"]);
 
-const objectiveFunctions: Ref<{ name: string; id: string }[]> = ref([
-  { name: "Rastrigin", id: "1" },
-  { name: "Rosenbrock", id: "2" },
-  { name: "Sphere", id: "3" },
-  { name: "Test function 1", id: "4" },
-]);
+const objectiveFunctions: Ref<{ name: string; id: number }[]> = ref([]);
 
-const algorithms = ref([
-  { name: "Snake optimizer", id: "1", params: ["xmin", "xmax", "dim"] },
-  {
-    name: "Grey wolf",
-    id: "2",
-    params: ["xmin", "xmax", "dim", "forest type", "animals around", "flora"],
-  },
-  { name: "Black widow", id: "3", params: ["xmin", "xmax", "dim"] },
-]);
+const algorithms = ref([]);
 
 const itemsSets = ref([
   {
     name: "function",
-    originalElements: objectiveFunctions,
-    selectedElements: [],
+    defaultDllsNames: objectiveFunctions,
+    dllsNames: [],
   },
   {
     name: "algorithm",
-    originalElements: algorithms,
-    selectedElements: [],
+    defaultDllsNames: algorithms,
+    dllsNames: [],
   },
 ]);
 
 itemsSets.value.forEach((itemSet) => {
   watch(
-    () => itemSet.selectedElements,
+    () => itemSet.dllsNames,
     () => {
       emit("new-items-selected", itemsSets.value);
     }
   );
 });
+
+onMounted(async () => {
+  // first enable chrome addon to use CORS
+  const functionsResponse = await axios
+    .get("http://localhost:7224/GetAllTestFunctionsNames")
+    .then((res) => {
+      if (res instanceof AxiosError) {
+        console.log(`${res.message}`);
+        return [];
+      }
+      return res.data;
+    });
+
+  objectiveFunctions.value = functionsResponse.map(
+    (name: string, index: number) => ({
+      name,
+      id: index,
+    })
+  );
+
+  const algorithmsResponse = await axios
+    .get("http://localhost:7224/GetAllAlgorithmsNames")
+    .then((res) => {
+      if (res instanceof AxiosError) {
+        console.log(`${res.message}`);
+        return [];
+      }
+      return res.data;
+    });
+
+  algorithms.value = algorithmsResponse.map((name: string, index: number) => ({
+    name,
+    id: index,
+    params: [],
+  }));
+});
 </script>
 
 <template>
   <ListWithUpload
-    v-for="({ name, originalElements }, index) in itemsSets"
+    v-for="({ name, defaultDllsNames }, index) in itemsSets"
     :name="name"
-    :items="originalElements"
+    :items="defaultDllsNames"
     :key="name"
-    @new-item-selected="
-      ($event) => (itemsSets[index].selectedElements = $event)
-    "
+    @new-item-selected="($event) => (itemsSets[index].dllsNames = $event)"
   />
 </template>

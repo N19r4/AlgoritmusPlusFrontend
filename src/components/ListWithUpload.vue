@@ -1,28 +1,41 @@
 <script setup lang="ts">
-import { Ref, ref, watch, defineEmits, defineProps } from "vue";
+import { Ref, ref, watch, defineEmits, defineProps, computed } from "vue";
 import FileUpload from "primevue/fileupload";
 import Checkbox from "primevue/checkbox";
 import Dialog from "primevue/dialog";
 import Button from "primevue/button";
 import InputText from "primevue/inputtext";
+import Toast from "primevue/toast";
+import { useToast } from "primevue/usetoast";
+
+import axios from "axios";
 
 const props = defineProps<{
   name: string;
   items: any[];
 }>();
 
-// uploaded function
-const mockedFile = {
-  name: "Rastrigin",
-  params: ["dim", "xmax", "xmin"],
+const toast = useToast();
+
+const showToastMessage = (
+  severity: "success" | "error",
+  summary: string,
+  detail: string
+) => {
+  toast.add({
+    severity: severity,
+    summary: summary,
+    detail: detail,
+    life: 3000,
+  });
 };
 
-const uploadedFile: Ref<{ name: string; params: any[] }> = ref({
+const uploadedFile: Ref<{ name: string; path: string }> = ref({
   name: "",
-  params: [],
+  path: "",
 });
 
-const items = ref(props.items);
+const items = computed(() => props.items);
 const isModalVisible = ref(false);
 const nameAlreadyExists = ref(false);
 
@@ -34,17 +47,42 @@ watch(selectedItems, (newVal) => {
   emit("new-item-selected", newVal);
 });
 
-const onUpload = () => {
-  uploadedFile.value.name = mockedFile.name;
-  uploadedFile.value.params = [...mockedFile.params];
-  isModalVisible.value = true;
+const uploadFile = async () => {
+  const payload =
+    props.name === "function"
+      ? `testFunctionDLL=${uploadedFile.value.path}`
+      : `optimizationAlgorithmDLL=${uploadedFile.value.path}`;
+
+  await axios
+    .post(
+      `http://localhost:7224/${
+        props.name === "function"
+          ? "UploadTestFunctionDLL"
+          : "UploadOptimizationAlgorithmDLL"
+      }?${payload}`
+    )
+    .then((res) => {
+      const maxID = Math.max(...items.value.map(({ id }) => id)) + 1;
+
+      items.value.push({
+        name: uploadedFile.value.name,
+        id: maxID,
+      });
+
+      isModalVisible.value = false;
+
+      uploadedFile.value.name = "";
+      uploadedFile.value.path = "";
+      showToastMessage("success", "Success", "File uploaded successfully.");
+
+      return res;
+    })
+    .catch((err) => {
+      showToastMessage("error", "Error", err.message);
+    });
 };
 
 const finishUpload = async () => {
-  // await axios.get("http://localhost:7224/WeatherForecast").then((res) => {
-  //   console.log(res);
-  // });
-
   if (
     items.value.map(({ name }) => name).includes(uploadedFile.value.name.trim())
   ) {
@@ -54,25 +92,13 @@ const finishUpload = async () => {
 
   nameAlreadyExists.value = false;
 
-  if (uploadedFile.value.params.some((param) => !param)) return;
-
-  const maxID = Math.max(...items.value.map(({ id }) => id)) + 1;
-
-  items.value.push({
-    name: uploadedFile.value.name,
-    params: uploadedFile.value.params,
-    id: maxID,
-  });
-
-  isModalVisible.value = false;
-
-  uploadedFile.value.params = [];
-  uploadedFile.value.name = "";
+  uploadFile();
 };
 </script>
 
 <template>
   <div class="section">
+    <Toast />
     <h2>My {{ props.name }}s</h2>
     <div class="cards">
       <div
@@ -96,32 +122,38 @@ const finishUpload = async () => {
         <div v-if="params" class="item-params">
           <span
             v-for="(param, index) in params"
-            :key="`${name}-${param}-${index}`"
+            :key="`${name}-${param.name}-${index}`"
             class="item-params__param"
-            >{{ param }}</span
+            >{{ param.name }} ({{ param.description }})</span
           >
         </div>
       </div>
     </div>
     <div class="custom-card flex justify-content-center">
-      <FileUpload
+      <!-- <FileUpload
         mode="basic"
         name="fileUpload"
-        url="/api/upload"
         accept=".pdf"
         :maxFileSize="1000000"
         :chooseLabel="`Upload new ${props.name}`"
         :auto="true"
-        @select="onUpload()"
-      />
+        @select="onUpload"
+      /> -->
+      <Button @click="isModalVisible = true"
+        >Upload new {{ props.name }}</Button
+      >
     </div>
   </div>
   <Dialog
     v-model:visible="isModalVisible"
     modal
-    header="Enter additional info"
-    :style="{ width: '30rem' }"
+    :header="`Upload your ${props.name}`"
+    :style="{ width: '20rem' }"
   >
+    <div class="help-input">
+      <label for="Path">Path</label>
+      <InputText type="text" v-model="uploadedFile.path" />
+    </div>
     <div class="help-input">
       <label for="Name">Name</label>
       <InputText
@@ -131,37 +163,10 @@ const finishUpload = async () => {
         :class="{ 'p-invalid': nameAlreadyExists }"
         :maxlength="30"
       />
-      <small id="Name-help"
-        >Enter new name for your {{ props.name }} (optional)</small
-      >
     </div>
     <small class="p-error" id="text-error" v-if="nameAlreadyExists"
       >This name already exists.</small
     >
-
-    <div
-      v-for="(param, index) in mockedFile.params"
-      :key="index"
-      class="help-input"
-    >
-      <InputText
-        :id="param"
-        v-model="uploadedFile.params[index]"
-        :aria-describedby="`${param}-help`"
-        :class="{ 'p-invalid': !uploadedFile.params[index].length }"
-        :maxlength="20"
-      />
-      <small :id="`${param}-help`"
-        >Enter new name for {{ `${param}` }} (optional)</small
-      >
-      <small
-        class="p-error"
-        :id="`${param}-required-error`"
-        v-if="!uploadedFile.params[index].length"
-        >This name is required.</small
-      >
-    </div>
-
     <template #footer>
       <Button
         label="Done"

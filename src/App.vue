@@ -3,15 +3,20 @@ import { RouteLocationRaw, RouterView } from "vue-router";
 import TabMenu from "primevue/tabmenu";
 import Steps from "primevue/steps";
 import ConfirmDialog from "primevue/confirmdialog";
-import { ref, onMounted, watch, watchEffect, Ref } from "vue";
+import { ref, onMounted, watch, watchEffect, Ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
+import { useCalculatingStore, useSelectedItemsStore } from "./state";
+import axios from "axios";
+import { useStepsStore } from "./state/stepsStore";
 
 const router = useRouter();
 const route = useRoute();
 
-const steps: Ref<never[]> | Ref<{ label: string; route: string }[]> = ref([]);
+const steps:
+  | Ref<never[]>
+  | Ref<{ label: string; route: string; command?: () => void }[]> = ref([]);
 
 const isActive = (item: any) => {
   return item.route ? router.resolve(item.route).path === route.path : false;
@@ -24,6 +29,9 @@ const items = ref([
     label: "Home",
     icon: "pi pi-fw pi-home",
     route: "/",
+    command: () => {
+      stepsStore.setAreStepsReadonly(false);
+    },
   },
   {
     label: "Documentation",
@@ -32,18 +40,45 @@ const items = ref([
   },
 ]);
 
-const selectedItems = ref([]);
+const selectedItems: Ref<
+  { name: "algorithm" | "function"; dllsNames: string[] }[]
+> = ref([]);
+
+const selectedItemsStore = useSelectedItemsStore();
+const calculatingStore = useCalculatingStore();
+
+const setDefaultParamsForAlgorithm = async () => {
+  const algorithmsDllName = selectedItems.value.find(
+    ({ name }) => name === "algorithm"
+  )?.dllsNames[0];
+
+  const paramsForAlgorithm = await axios
+    .get(
+      `http://localhost:7224/GetParamsInfoForAlgorithm?optimizationAlgorithmName=${algorithmsDllName}`
+    )
+    .then((res) => {
+      return res.data.map((param: any) => ({
+        ...param,
+        step: 1,
+      }));
+    });
+
+  selectedItemsStore.setParamsForChosenAlgorithm(paramsForAlgorithm);
+  selectedItemsStore.setDimForChosenAlgorithm(0);
+};
 
 watchEffect(() => {
+  selectedItemsStore.setNewItems(selectedItems.value);
+
   const algorithms = selectedItems.value.find(
     ({ name }) => name === "algorithm"
   );
-  const functions =
-    selectedItems.value.find(({ name }) => name === "function") ?? {};
+
+  const functions = selectedItems.value.find(({ name }) => name === "function");
 
   if (algorithms && functions) {
-    const algorithmCount = algorithms.selectedElements.length;
-    const functionCount = functions.selectedElements.length;
+    const algorithmCount = algorithms.dllsNames.length;
+    const functionCount = functions.dllsNames.length;
 
     if (algorithmCount === 1 && functionCount >= 1) {
       steps.value = [
@@ -54,10 +89,37 @@ watchEffect(() => {
         {
           label: "Enter parameters",
           route: "/step-2",
+          command: async () => {
+            if (!selectedItemsStore.getParamsForChosenAlgorithm())
+              await setDefaultParamsForAlgorithm();
+          },
         },
         {
           label: "Summary",
           route: "/step-3",
+          command: async () => {
+            if (!selectedItemsStore.getParamsForChosenAlgorithm())
+              await setDefaultParamsForAlgorithm();
+
+            const items = selectedItemsStore.getItems();
+
+            if (!items) return;
+            const payload = {
+              testFunctionNames: items[0].dllsNames,
+              optimizationAlgorithmName: items[1].dllsNames[0],
+              dim: selectedItemsStore.getDimForChosenAlgorithm(),
+              paramsForAlgorithm: selectedItemsStore
+                .getParamsForChosenAlgorithm()
+                .map(({ lowerBoundary, upperBoundary, step }: any) => ({
+                  lowerBoundry: lowerBoundary,
+                  upperBoundry: upperBoundary,
+                  step,
+                })),
+            };
+
+            calculatingStore.startCalculating(payload);
+            stepsStore.setAreStepsReadonly(true);
+          },
         },
       ];
     } else if (algorithmCount >= 1 && functionCount >= 1) {
@@ -76,7 +138,7 @@ watchEffect(() => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
   activeStep.value = steps.value.findIndex(
     (item: { route: RouteLocationRaw }) =>
       route.path === router.resolve(item.route).path
@@ -97,13 +159,13 @@ watch(
 const confirm = useConfirm();
 const toast = useToast();
 
-const confirm1 = (e: any, routerProps: any) => {
+const confirm1 = (e: any, routerProps: any, query: any) => {
   confirm.require({
     message: "Are you sure you want to proceed?",
     header: "Confirmation",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      routerProps.navigate(e);
+      routerProps.push({ path: e, query: query });
     },
     reject: () => {
       toast.add({
@@ -115,6 +177,10 @@ const confirm1 = (e: any, routerProps: any) => {
     },
   });
 };
+
+const stepsStore = useStepsStore();
+
+const areStepsReadonly = computed(() => stepsStore.getAreStepsReadonly());
 </script>
 
 <template>
@@ -157,7 +223,7 @@ const confirm1 = (e: any, routerProps: any) => {
                 <Steps
                   :model="steps"
                   aria-label="Form Steps"
-                  :readonly="false"
+                  :readonly="areStepsReadonly"
                   :pt="{
                     menuitem: ({ context }) => ({
                       class:
@@ -225,7 +291,6 @@ const confirm1 = (e: any, routerProps: any) => {
   opacity: 0;
 }
 .sidebar {
-  height: 100%;
   padding: 2rem 6rem 2rem 1rem;
   border-radius: 0.6875rem;
   background: linear-gradient(180deg, #5f1fc7 0%, #9820c8 100%);
@@ -239,7 +304,7 @@ main {
     margin-bottom: 30px;
   }
   .main {
-    height: 100vh;
+    height: 100%;
     display: flex;
 
     .router-view {
