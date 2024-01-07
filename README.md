@@ -2,6 +2,8 @@
 
 ## Project setup
 ```
+cd algorithmus
+npm install --global yarn
 yarn install
 ```
 
