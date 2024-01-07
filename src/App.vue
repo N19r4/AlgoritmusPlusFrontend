@@ -64,7 +64,7 @@ const setDefaultParamsForAlgorithm = async () => {
     });
 
   selectedItemsStore.setParamsForChosenAlgorithm(paramsForAlgorithm);
-  selectedItemsStore.setDimForChosenAlgorithm(0);
+  selectedItemsStore.setDimForChosenAlgorithm(2);
 };
 
 watchEffect(() => {
