@@ -106,14 +106,15 @@ watchEffect(() => {
             if (!items) return;
             const payload = {
               testFunctionNames: items[0].dllsNames,
-              optimizationAlgorithmName: items[1].dllsNames[0],
+              optimizationAlgorithmNames: items[1].dllsNames,
               dim: selectedItemsStore.getDimForChosenAlgorithm(),
               paramsForAlgorithm: selectedItemsStore
                 .getParamsForChosenAlgorithm()
-                .map(({ lowerBoundary, upperBoundary, step }: any) => ({
+                .map(({ lowerBoundary, upperBoundary, step, name }: any) => ({
                   lowerBoundry: lowerBoundary,
                   upperBoundry: upperBoundary,
                   step,
+                  name,
                 })),
             };
 
