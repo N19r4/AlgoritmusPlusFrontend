@@ -79,7 +79,7 @@ const uploadFile = async () => {
       return res;
     })
     .catch((err) => {
-      showToastMessage("error", "Error", err.message);
+      showToastMessage("error", "Error", err.response.data ?? err.message);
     });
 };
 

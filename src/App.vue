@@ -123,7 +123,7 @@ watchEffect(() => {
           },
         },
       ];
-    } else if (algorithmCount >= 1 && functionCount >= 1) {
+    } else if (algorithmCount >= 1 && functionCount == 1) {
       steps.value = [
         {
           label: "Choose functions and algorithms",
@@ -135,7 +135,18 @@ watchEffect(() => {
           route: "/step-3",
         },
       ];
-    } else steps.value = [];
+    } else {
+      steps.value = [];
+      toast.add({
+        severity: "warn",
+        summary: "No operations available for selected items.",
+        detail:
+          algorithmCount > 1 && functionCount > 1
+            ? "Too many algorithms and functions selected."
+            : "No algorithms or functions selected.",
+        life: 3000,
+      });
+    }
   }
 });
 
@@ -144,6 +155,8 @@ onMounted(async () => {
     (item: { route: RouteLocationRaw }) =>
       route.path === router.resolve(item.route).path
   );
+  // call for api to check if calculations were paused
+  confirm1();
 });
 
 watch(
@@ -160,19 +173,19 @@ watch(
 const confirm = useConfirm();
 const toast = useToast();
 
-const confirm1 = (e: any, routerProps: any, query: any) => {
+const confirm1 = () => {
   confirm.require({
-    message: "Are you sure you want to proceed?",
-    header: "Confirmation",
+    message: "Last calculations were not finished. Do you want to resume?",
+    header: "Resume calculations?",
     icon: "pi pi-exclamation-triangle",
     accept: () => {
-      routerProps.push({ path: e, query: query });
+      router.push("/step-3");
     },
     reject: () => {
       toast.add({
-        severity: "error",
+        severity: "info",
         summary: "Rejected",
-        detail: "You have rejected",
+        detail: "You can start new calculations now.",
         life: 3000,
       });
     },
