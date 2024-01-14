@@ -30,6 +30,7 @@ const items = ref([
     icon: "pi pi-fw pi-home",
     route: "/",
     command: () => {
+      // stop calcualtions
       stepsStore.setAreStepsReadonly(false);
     },
   },
@@ -185,8 +186,30 @@ const confirm1 = () => {
     message: "Last calculations were not finished. Do you want to resume?",
     header: "Resume calculations?",
     icon: "pi pi-exclamation-triangle",
-    accept: () => {
+    accept: async () => {
       router.push("/step-3");
+      const params = await axios
+        .get(`http://localhost:7224/GetResumedAlgorithmParams`)
+        .then((res) => res.data);
+
+      selectedItemsStore.setNewItems([
+        {
+          name: "function",
+          dllsNames: params.testFunctionNames,
+        },
+        {
+          name: "algorithm",
+          dllsNames: params.optimizationAlgorithmNames,
+        },
+      ]);
+      selectedItemsStore.setDimForChosenAlgorithm(params.dim);
+      selectedItemsStore.setParamsForChosenAlgorithm(
+        params.paramsForAlgorithm.map((param: any) => ({
+          ...param,
+          lowerBoundary: param.lowerBoundry,
+          upperBoundary: param.upperBoundry,
+        }))
+      );
       calculatingStore.resumeCalculating();
       stepsStore.setAreStepsReadonly(true);
     },
