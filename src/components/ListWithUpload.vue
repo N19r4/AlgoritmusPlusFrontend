@@ -110,7 +110,7 @@ const finishUpload = async () => {
     <h2>My {{ props.name }}s</h2>
     <div class="cards">
       <div
-        v-for="{ name, id, params } in items"
+        v-for="{ name, id } in items"
         :key="`${name}-${id}`"
         class="custom-card custom-card__hover"
         :class="selectedItems.includes(name) ? 'custom-card--highlighted' : ''"
@@ -127,14 +127,14 @@ const finishUpload = async () => {
           >
         </div>
 
-        <div v-if="params" class="item-params">
+        <!-- <div v-if="params" class="item-params">
           <span
             v-for="(param, index) in params"
             :key="`${name}-${param.name}-${index}`"
             class="item-params__param"
             >{{ param.name }} ({{ param.description }})</span
           >
-        </div>
+        </div> -->
       </div>
     </div>
     <div class="custom-card flex justify-content-center">
@@ -151,9 +151,9 @@ const finishUpload = async () => {
   >
     <div class="help-input">
       <label for="Path">Path</label>
-      <InputText type="text" v-model="uploadedFile.path" />
+      <InputText inputId="Path" type="text" v-model="uploadedFile.path" />
     </div>
-    <div class="help-input">
+    <!-- <div class="help-input">
       <label for="Name">Name</label>
       <InputText
         id="Name"
@@ -168,7 +168,7 @@ const finishUpload = async () => {
     >
     <small class="p-error" id="text-error" v-if="nameRequired"
       >Name is required.</small
-    >
+    > -->
     <template #footer>
       <Button
         label="Done"

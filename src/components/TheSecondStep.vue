@@ -46,7 +46,9 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
             <h3>{{ param.name }} ({{ param.description }})</h3>
             <div class="param-options">
               <div class="help-input">
-                <label :for="param.name">Lower boundary:</label>
+                <label :for="`${param.name}-lower-boundary`"
+                  >Lower boundary:</label
+                >
                 <InputNumber
                   :id="`${param.name}-lower-boundary`"
                   v-model="
@@ -64,7 +66,9 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
               </div>
 
               <div class="help-input">
-                <label :for="param.name">Upper boundary:</label>
+                <label :for="`${param.name}-upper-boundary`"
+                  >Upper boundary:</label
+                >
                 <InputNumber
                   :id="`${param.name}-upper-boundary`"
                   v-model="
