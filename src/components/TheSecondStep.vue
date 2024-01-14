@@ -1,21 +1,37 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  markRaw,
+  watch,
+  ref,
+  isReactive,
+  reactive,
+  shallowRef,
+} from "vue";
 import InputNumber from "primevue/inputnumber";
 import { useSelectedItemsStore } from "../state";
 import Slider from "primevue/slider";
 
 const selectedItemsStore = useSelectedItemsStore();
 
+const paramsForAlgorithm = computed(() =>
+  selectedItemsStore.getParamsForChosenAlgorithm()
+);
+
+const params = ref();
+
+const selectedItems = computed(() => selectedItemsStore.getItems());
+
 const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
+
+watch(paramsForAlgorithm, () => {
+  params.value = JSON.parse(JSON.stringify(paramsForAlgorithm.value));
+});
 </script>
 
 <template>
   <div class="second-step">
-    <div
-      v-for="{ name, dllsNames } in selectedItemsStore.getItems()"
-      :key="name"
-      class=""
-    >
+    <div v-for="{ name, dllsNames } in selectedItems" :key="name" class="">
       <div v-if="name === 'algorithm' && dllsNames.length === 1">
         <h2>
           Selected {{ name }}: <b>{{ dllsNames[0] }}</b>
@@ -37,9 +53,7 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
             />
           </div>
           <div
-            v-for="(
-              param, index
-            ) in selectedItemsStore.getParamsForChosenAlgorithm()"
+            v-for="(param, index) in paramsForAlgorithm"
             :key="index"
             class="param-section"
           >
@@ -58,10 +72,7 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
                   :aria-describedby="`${param.name}-lower-boundary-help`"
                   locale="pl-PL"
                   :allowEmpty="false"
-                  :min="
-                    selectedItemsStore.getParamsForChosenAlgorithm()[index]
-                      .lowerBoundary
-                  "
+                  :min="params[index].lowerBoundary"
                 />
               </div>
 
@@ -78,10 +89,7 @@ const dim = ref(selectedItemsStore.getDimForChosenAlgorithm());
                   :aria-describedby="`${param.name}-upper-boundary-help`"
                   locale="pl-PL"
                   :allowEmpty="false"
-                  :max="
-                    selectedItemsStore.getParamsForChosenAlgorithm()[index]
-                      .upperBoundary
-                  "
+                  :max="params[index].upperBoundary"
                 />
               </div>
 

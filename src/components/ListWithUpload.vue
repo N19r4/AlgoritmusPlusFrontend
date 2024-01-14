@@ -49,10 +49,11 @@ watch(selectedItems, (newVal) => {
 });
 
 const uploadFile = async () => {
+  const path = uploadedFile.value.path.trim().replaceAll('"', "");
   const payload =
     props.name === "function"
-      ? `testFunctionDLL=${uploadedFile.value.path}`
-      : `optimizationAlgorithmDLL=${uploadedFile.value.path}`;
+      ? `testFunctionDLL=${path}`
+      : `optimizationAlgorithmDLL=${path}`;
 
   await axios
     .post(
@@ -66,7 +67,7 @@ const uploadFile = async () => {
       const maxID = Math.max(...items.value.map(({ id }) => id)) + 1;
 
       items.value.push({
-        name: uploadedFile.value.name,
+        name: res.data,
         id: maxID,
       });
 

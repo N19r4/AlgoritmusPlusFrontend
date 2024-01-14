@@ -1,10 +1,11 @@
 import axios, { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { ref, Ref } from "vue";
-import { useSelectedItemsStore } from ".";
 
 export const useCalculatingStore = defineStore("calculatingStore", () => {
   const isCalculating: Ref<boolean> = ref(false);
+
+  const calculatingResult = ref();
 
   const calculatingResultMessage: Ref<{
     severity: "success" | "info" | "warn" | "error";
@@ -20,7 +21,44 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     return calculatingResultMessage.value;
   };
 
+  const getCalculatingResult = () => {
+    return calculatingResult.value;
+  };
+
+  const resumeCalculating = async () => {
+    isCalculating.value = true;
+    calculatingResultMessage.value = {
+      severity: "info",
+      summary: "Calculation resumed",
+      detail: "This may take a while.",
+    };
+
+    calculatingResult.value = await axios
+      .post("http://localhost:7224/ResumeAlgorithm")
+      .then((res) => {
+        console.log(res.data);
+
+        calculatingResultMessage.value = {
+          severity: "success",
+          summary: "Success",
+          detail: "Calculation finished successfully.",
+        };
+        return res.data;
+      })
+      .catch((error: AxiosError) => {
+        if (error.response) {
+          calculatingResultMessage.value = {
+            severity: "error",
+            summary: "Error",
+            detail: "error",
+          };
+        }
+      });
+    isCalculating.value = false;
+  };
+
   const startCalculating = async (payload: any) => {
+    calculatingResult.value = undefined;
     isCalculating.value = true;
     calculatingResultMessage.value = {
       severity: "info",
@@ -28,17 +66,18 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
       detail: "This may take a while.",
     };
 
-    console.log(payload);
+    // console.log(payload);
 
-    const response = await axios
+    calculatingResult.value = await axios
       .post("http://localhost:7224/RunAlgorithm", payload)
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
         calculatingResultMessage.value = {
           severity: "success",
           summary: "Success",
           detail: "Calculation finished successfully.",
         };
+        return res.data;
       })
       .catch((error: AxiosError) => {
         if (error.response) {
@@ -65,5 +104,7 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     getIsCalculating,
     pauseCalculating,
     getCalculatingResultMessage,
+    resumeCalculating,
+    getCalculatingResult,
   };
 });

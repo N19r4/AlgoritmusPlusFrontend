@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, computed, watch, defineEmits } from "vue";
 import ProgressSpinner from "primevue/progressspinner";
+import Button from "primevue/button";
 import { useCalculatingStore, useSelectedItemsStore } from "@/state";
 import { useToast } from "primevue/usetoast";
 import Toast from "primevue/toast";
 import SelectButton from "primevue/selectbutton";
+
+const emit = defineEmits(["new-items-selected"]);
 
 const toast = useToast();
 
@@ -27,6 +30,9 @@ const selectedItemsStore = useSelectedItemsStore();
 const isCalculating = computed(() => calculatingStore.getIsCalculating());
 const calculatingRes = computed(() =>
   calculatingStore.getCalculatingResultMessage()
+);
+const calculatingResponse = computed(() =>
+  calculatingStore.getCalculatingResult()
 );
 
 watch(calculatingRes, (newVal) => {
@@ -54,11 +60,27 @@ watch(currentClickedButton, (newVal) => {
     changeCalculatingState(newVal);
   }
 });
+
+const downloadCSV = () => {
+  const csv = calculatingResponse.value;
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.setAttribute("hidden", "");
+  a.setAttribute("href", url);
+  a.setAttribute("download", "results.csv");
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
 </script>
 <template>
   <Toast />
   <div class="third-step">
-    <div class="center-on-screen">
+    <div v-if="!calculatingResponse" class="center-on-screen">
       <div v-if="isCalculating" class="loader">
         <ProgressSpinner />
         <h2>Calculating...</h2>
@@ -77,6 +99,10 @@ watch(currentClickedButton, (newVal) => {
           <i :class="slotProps.option.icon"></i>
         </template>
       </SelectButton>
+    </div>
+    <div v-else class="center-on-screen">
+      <h2>Calculations finished!</h2>
+      <Button label="Download results" @click="downloadCSV" />
     </div>
     <h2>Summary</h2>
     <div class="summary">

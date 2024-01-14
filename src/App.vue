@@ -58,7 +58,10 @@ const setDefaultParamsForAlgorithm = async () => {
     )
     .then((res) => {
       return res.data.map((param: any) => ({
-        ...param,
+        name: param.name,
+        description: param.description,
+        lowerBoundary: param.lowerBoundry,
+        upperBoundary: param.upperBoundry,
         step: 0,
       }));
     });
@@ -156,7 +159,11 @@ onMounted(async () => {
       route.path === router.resolve(item.route).path
   );
   // call for api to check if calculations were paused
-  confirm1();
+  await axios
+    .get(`http://localhost:7224/IfCalculationsFinished`)
+    .then((res) => {
+      if (!res.data) confirm1();
+    });
 });
 
 watch(
@@ -180,6 +187,8 @@ const confirm1 = () => {
     icon: "pi pi-exclamation-triangle",
     accept: () => {
       router.push("/step-3");
+      calculatingStore.resumeCalculating();
+      stepsStore.setAreStepsReadonly(true);
     },
     reject: () => {
       toast.add({
