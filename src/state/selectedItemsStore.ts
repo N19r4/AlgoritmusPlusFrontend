@@ -21,7 +21,7 @@ export const useSelectedItemsStore = defineStore("selectedItemsStore", () => {
     paramsForChosenAlgorithm.value = params;
   };
   const getParamsForChosenAlgorithm = () => {
-    return paramsForChosenAlgorithm.value;
+    return paramsForChosenAlgorithm.value ?? [];
   };
 
   const setDimForChosenAlgorithm = (dim: number) => {

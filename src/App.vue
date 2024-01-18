@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouteLocationRaw, RouterView } from "vue-router";
-import TabMenu from "primevue/tabmenu";
+import TabMenu, { TabMenuChangeEvent } from "primevue/tabmenu";
 import Steps from "primevue/steps";
 import ConfirmDialog from "primevue/confirmdialog";
 import { ref, onMounted, watch, watchEffect, Ref, computed } from "vue";
@@ -29,10 +29,6 @@ const items = ref([
     label: "Home",
     icon: "pi pi-fw pi-home",
     route: "/",
-    command: () => {
-      // stop calcualtions
-      stepsStore.setAreStepsReadonly(false);
-    },
   },
   {
     label: "Documentation",
@@ -40,6 +36,27 @@ const items = ref([
     route: "/documentation",
   },
 ]);
+
+const confirm2 = () => {
+  confirm.require({
+    message: "Are you sure that you want to stop calculations?",
+    header: "Stop calculations?",
+    icon: "pi pi-exclamation-triangle",
+    accept: () => {
+      // calculatingStore.stopCalculating();
+      router.push("/");
+      stepsStore.setAreStepsReadonly(false);
+    },
+    reject: () => {
+      toast.add({
+        severity: "info",
+        summary: "Rejected",
+        detail: "Calculations are still running.",
+        life: 3000,
+      });
+    },
+  });
+};
 
 const selectedItems: Ref<
   { name: "algorithm" | "function"; dllsNames: string[] }[]
@@ -63,8 +80,17 @@ const setDefaultParamsForAlgorithm = async () => {
         description: param.description,
         lowerBoundary: param.lowerBoundry,
         upperBoundary: param.upperBoundry,
-        step: 0,
+        step: 10,
       }));
+    })
+    .catch((err) => {
+      toast.add({
+        severity: "error",
+        summary: "Error",
+        detail: err,
+        life: 3000,
+      });
+      return [];
     });
 
   selectedItemsStore.setParamsForChosenAlgorithm(paramsForAlgorithm);
@@ -94,7 +120,7 @@ watchEffect(() => {
           label: "Enter parameters",
           route: "/step-2",
           command: async () => {
-            if (!selectedItemsStore.getParamsForChosenAlgorithm())
+            if (selectedItemsStore.getParamsForChosenAlgorithm().length === 0)
               await setDefaultParamsForAlgorithm();
           },
         },
@@ -102,24 +128,27 @@ watchEffect(() => {
           label: "Summary",
           route: "/step-3",
           command: async () => {
-            if (!selectedItemsStore.getParamsForChosenAlgorithm())
+            if (selectedItemsStore.getParamsForChosenAlgorithm().length === 0)
               await setDefaultParamsForAlgorithm();
 
             const items = selectedItemsStore.getItems();
 
             if (!items) return;
+
             const payload = {
               testFunctionNames: items[0].dllsNames,
               optimizationAlgorithmNames: items[1].dllsNames,
               dim: selectedItemsStore.getDimForChosenAlgorithm(),
-              paramsForAlgorithm: selectedItemsStore
-                .getParamsForChosenAlgorithm()
-                .map(({ lowerBoundary, upperBoundary, step, name }: any) => ({
-                  lowerBoundry: lowerBoundary,
-                  upperBoundry: upperBoundary,
-                  step,
-                  name,
-                })),
+              paramsDict: {
+                [items[1].dllsNames[0]]: selectedItemsStore
+                  .getParamsForChosenAlgorithm()
+                  .map(({ lowerBoundary, upperBoundary, step, name }: any) => ({
+                    lowerBoundry: lowerBoundary,
+                    upperBoundry: upperBoundary,
+                    step,
+                    name,
+                  })),
+              },
             };
 
             calculatingStore.startCalculating(payload);
@@ -127,16 +156,37 @@ watchEffect(() => {
           },
         },
       ];
-    } else if (algorithmCount >= 1 && functionCount == 1) {
+    } else if (algorithmCount > 1 && functionCount === 1) {
       steps.value = [
         {
           label: "Choose functions and algorithms",
           route: "/",
         },
-
+        {
+          label: "Enter dimension",
+          route: "/step-2",
+          command: () => {
+            selectedItemsStore.setDimForChosenAlgorithm(2);
+          },
+        },
         {
           label: "Summary",
           route: "/step-3",
+          command: async () => {
+            const items = selectedItemsStore.getItems();
+
+            if (!items) return;
+
+            const payload = {
+              testFunctionNames: items[0].dllsNames,
+              optimizationAlgorithmNames: items[1].dllsNames,
+              dim: selectedItemsStore.getDimForChosenAlgorithm(),
+              paramsDict: {},
+            };
+
+            calculatingStore.startCalculating(payload);
+            stepsStore.setAreStepsReadonly(true);
+          },
         },
       ];
     } else {
@@ -202,14 +252,20 @@ const confirm1 = () => {
           dllsNames: params.optimizationAlgorithmNames,
         },
       ]);
+
       selectedItemsStore.setDimForChosenAlgorithm(params.dim);
-      selectedItemsStore.setParamsForChosenAlgorithm(
-        params.paramsForAlgorithm.map((param: any) => ({
-          ...param,
-          lowerBoundary: param.lowerBoundry,
-          upperBoundary: param.upperBoundry,
-        }))
-      );
+      if (Object.keys(params.paramsDict).length > 1)
+        selectedItemsStore.setParamsForChosenAlgorithm([]);
+      else
+        selectedItemsStore.setParamsForChosenAlgorithm(
+          params.paramsDict[params.optimizationAlgorithmNames[0]].map(
+            (param: any) => ({
+              ...param,
+              lowerBoundary: param.lowerBoundry,
+              upperBoundary: param.upperBoundry,
+            })
+          )
+        );
       calculatingStore.resumeCalculating();
       stepsStore.setAreStepsReadonly(true);
     },
@@ -227,6 +283,18 @@ const confirm1 = () => {
 const stepsStore = useStepsStore();
 
 const areStepsReadonly = computed(() => stepsStore.getAreStepsReadonly());
+
+const tabChanged = (e: TabMenuChangeEvent) => {
+  if (e.index === 0) {
+    e.originalEvent.preventDefault();
+    // stop calcualtions
+    if (calculatingStore.getIsCalculating()) confirm2();
+    else {
+      stepsStore.setAreStepsReadonly(false);
+      router.push(items.value[0].route);
+    }
+  }
+};
 </script>
 
 <template>
@@ -237,7 +305,12 @@ const areStepsReadonly = computed(() => stepsStore.getAreStepsReadonly());
       </div>
       <div class="main">
         <div class="sidebar">
-          <TabMenu v-model:activeIndex="active" :model="items">
+          <TabMenu
+            :readonly="areStepsReadonly"
+            v-model:activeIndex="active"
+            :model="items"
+            @tab-change="tabChanged"
+          >
             <template #item="{ label, item, props }">
               <router-link
                 v-if="item.route"

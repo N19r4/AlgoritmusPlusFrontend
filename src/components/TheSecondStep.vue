@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  markRaw,
-  watch,
-  ref,
-  isReactive,
-  reactive,
-  shallowRef,
-} from "vue";
+import { computed, watch, ref } from "vue";
 import InputNumber from "primevue/inputnumber";
 import { useSelectedItemsStore } from "../state";
 import Slider from "primevue/slider";
@@ -30,8 +22,30 @@ watch(paramsForAlgorithm, () => {
 </script>
 
 <template>
-  <div class="second-step">
-    <div v-for="{ name, dllsNames } in selectedItems" :key="name" class="">
+  <div v-if="paramsForAlgorithm" class="second-step">
+    <div v-for="{ name, dllsNames } in selectedItems" :key="name">
+      <div v-if="name === 'algorithm' && dllsNames.length > 1">
+        <h2>
+          Selected {{ name }}s: <b>{{ dllsNames.join(", ") }}</b>
+        </h2>
+        <div>
+          <div class="help-input">
+            <label for="dim">Dimension (dim):</label>
+            <InputNumber
+              :id="`dim`"
+              v-model="dim"
+              @update:modelValue="
+                selectedItemsStore.setDimForChosenAlgorithm(dim)
+              "
+              :aria-describedby="`dim-help`"
+              locale="pl-PL"
+              :allowEmpty="false"
+              :showButtons="true"
+              :min="2"
+            />
+          </div>
+        </div>
+      </div>
       <div v-if="name === 'algorithm' && dllsNames.length === 1">
         <h2>
           Selected {{ name }}: <b>{{ dllsNames[0] }}</b>

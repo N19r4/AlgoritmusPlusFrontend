@@ -36,8 +36,6 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     calculatingResult.value = await axios
       .post("http://localhost:7224/ResumeAlgorithm")
       .then((res) => {
-        console.log(res.data);
-
         calculatingResultMessage.value = {
           severity: "success",
           summary: "Success",
@@ -66,12 +64,9 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
       detail: "This may take a while.",
     };
 
-    // console.log(payload);
-
     calculatingResult.value = await axios
       .post("http://localhost:7224/RunAlgorithm", payload)
       .then((res) => {
-        // console.log(res.data);
         calculatingResultMessage.value = {
           severity: "success",
           summary: "Success",
