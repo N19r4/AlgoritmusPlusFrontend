@@ -66,77 +66,82 @@ watch(paramsForAlgorithm, () => {
               :min="2"
             />
           </div>
-          <div
-            v-for="(param, index) in paramsForAlgorithm"
-            :key="index"
-            class="param-section"
-          >
-            <h3>{{ param.name }} ({{ param.description }})</h3>
-            <div class="param-options">
-              <div class="help-input">
-                <label :for="`${param.name}-lower-boundary`"
-                  >Lower boundary:</label
-                >
-                <InputNumber
-                  :id="`${param.name}-lower-boundary`"
-                  v-model="
-                    selectedItemsStore.getParamsForChosenAlgorithm()[index]
-                      .lowerBoundary
-                  "
-                  :aria-describedby="`${param.name}-lower-boundary-help`"
-                  locale="pl-PL"
-                  :allowEmpty="false"
-                  :min="params[index].lowerBoundary"
-                />
-              </div>
+          <div v-if="paramsForAlgorithm">
+            <div
+              v-for="(param, index) in paramsForAlgorithm"
+              :key="index"
+              class="param-section"
+            >
+              <h3>{{ param.name }} ({{ param.description }})</h3>
+              <div class="param-options">
+                <div class="help-input">
+                  <label :for="`${param.name}-lower-boundary`"
+                    >Lower boundary:</label
+                  >
+                  <InputNumber
+                    v-if="params"
+                    :id="`${param.name}-lower-boundary`"
+                    v-model="
+                      selectedItemsStore.getParamsForChosenAlgorithm()[index]
+                        .lowerBoundary
+                    "
+                    :aria-describedby="`${param.name}-lower-boundary-help`"
+                    locale="pl-PL"
+                    :allowEmpty="false"
+                    :min="params[index].lowerBoundary"
+                  />
+                </div>
 
-              <div class="help-input">
-                <label :for="`${param.name}-upper-boundary`"
-                  >Upper boundary:</label
-                >
-                <InputNumber
-                  :id="`${param.name}-upper-boundary`"
-                  v-model="
-                    selectedItemsStore.getParamsForChosenAlgorithm()[index]
-                      .upperBoundary
-                  "
-                  :aria-describedby="`${param.name}-upper-boundary-help`"
-                  locale="pl-PL"
-                  :allowEmpty="false"
-                  :max="params[index].upperBoundary"
-                />
-              </div>
+                <div class="help-input">
+                  <label :for="`${param.name}-upper-boundary`"
+                    >Upper boundary:</label
+                  >
+                  <InputNumber
+                    v-if="params"
+                    :id="`${param.name}-upper-boundary`"
+                    v-model="
+                      selectedItemsStore.getParamsForChosenAlgorithm()[index]
+                        .upperBoundary
+                    "
+                    :aria-describedby="`${param.name}-upper-boundary-help`"
+                    locale="pl-PL"
+                    :allowEmpty="false"
+                    :max="params[index].upperBoundary"
+                  />
+                </div>
 
-              <div>
-                <div class="w-14rem">
-                  <div class="help-input">
-                    <label :for="`${param.name}-step`"
-                      >{{ param.name }} step:</label
-                    >
-                    <InputNumber
-                      :id="`${param.name}-step`"
+                <div>
+                  <div class="w-14rem">
+                    <div class="help-input">
+                      <label :for="`${param.name}-step`"
+                        >{{ param.name }} step:</label
+                      >
+                      <InputNumber
+                        :id="`${param.name}-step`"
+                        v-model="
+                          selectedItemsStore.getParamsForChosenAlgorithm()[
+                            index
+                          ].step
+                        "
+                        class="w-full"
+                        :useGrouping="false"
+                        :allowEmpty="false"
+                        readonly
+                        disabled
+                      />
+                    </div>
+
+                    <Slider
                       v-model="
                         selectedItemsStore.getParamsForChosenAlgorithm()[index]
                           .step
                       "
+                      :min="0"
+                      :max="100"
                       class="w-full"
-                      :useGrouping="false"
-                      :allowEmpty="false"
-                      readonly
-                      disabled
+                      :step="10"
                     />
                   </div>
-
-                  <Slider
-                    v-model="
-                      selectedItemsStore.getParamsForChosenAlgorithm()[index]
-                        .step
-                    "
-                    :min="0"
-                    :max="100"
-                    class="w-full"
-                    :step="10"
-                  />
                 </div>
               </div>
             </div>

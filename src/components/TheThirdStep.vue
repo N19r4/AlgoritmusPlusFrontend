@@ -49,7 +49,7 @@ const options = ref([
 
 const changeCalculatingState = ({ value }: { value: string }) => {
   if (value === "Resume") {
-    calculatingStore.startCalculating("");
+    calculatingStore.resumeCalculating();
   } else if (value === "Pause") {
     calculatingStore.pauseCalculating();
   }
@@ -80,7 +80,12 @@ const downloadCSV = () => {
 <template>
   <Toast />
   <div class="third-step">
-    <div v-if="!calculatingResponse" class="center-on-screen">
+    <div
+      v-if="
+        !calculatingResponse || calculatingResponse === 'Calculations stopped'
+      "
+      class="center-on-screen"
+    >
       <div v-if="isCalculating" class="loader">
         <ProgressSpinner />
         <h2>Calculating...</h2>
@@ -92,6 +97,7 @@ const downloadCSV = () => {
       <SelectButton
         v-model="currentClickedButton"
         :options="options"
+        :allowEmpty="false"
         optionLabel="value"
         dataKey="value"
       >

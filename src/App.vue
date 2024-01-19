@@ -37,23 +37,18 @@ const items = ref([
   },
 ]);
 
-const confirm2 = () => {
+const confirm2 = (tabIndex: number) => {
   confirm.require({
-    message: "Are you sure that you want to stop calculations?",
-    header: "Stop calculations?",
+    message: "Are you sure that you want to abort calculations?",
+    header: "Abort calculations?",
     icon: "pi pi-exclamation-triangle",
-    accept: () => {
-      // calculatingStore.stopCalculating();
-      router.push("/");
+    accept: async () => {
+      await calculatingStore.pauseCalculating();
+      await axios.post(`http://localhost:7224/CancelResuming`);
+      calculatingStore.clearCalculatingResult();
+
+      router.push(items.value[tabIndex].route);
       stepsStore.setAreStepsReadonly(false);
-    },
-    reject: () => {
-      toast.add({
-        severity: "info",
-        summary: "Rejected",
-        detail: "Calculations are still running.",
-        life: 3000,
-      });
     },
   });
 };
@@ -66,9 +61,13 @@ const selectedItemsStore = useSelectedItemsStore();
 const calculatingStore = useCalculatingStore();
 
 const setDefaultParamsForAlgorithm = async () => {
-  const algorithmsDllName = selectedItems.value.find(
+  const algorithmsDll = selectedItems.value.find(
     ({ name }) => name === "algorithm"
-  )?.dllsNames[0];
+  );
+
+  if (!algorithmsDll) return;
+
+  const algorithmsDllName = algorithmsDll.dllsNames[0];
 
   const paramsForAlgorithm = await axios
     .get(
@@ -269,7 +268,8 @@ const confirm1 = () => {
       calculatingStore.resumeCalculating();
       stepsStore.setAreStepsReadonly(true);
     },
-    reject: () => {
+    reject: async () => {
+      await axios.post(`http://localhost:7224/CancelResuming`);
       toast.add({
         severity: "info",
         summary: "Rejected",
@@ -283,18 +283,6 @@ const confirm1 = () => {
 const stepsStore = useStepsStore();
 
 const areStepsReadonly = computed(() => stepsStore.getAreStepsReadonly());
-
-const tabChanged = (e: TabMenuChangeEvent) => {
-  if (e.index === 0) {
-    e.originalEvent.preventDefault();
-    // stop calcualtions
-    if (calculatingStore.getIsCalculating()) confirm2();
-    else {
-      stepsStore.setAreStepsReadonly(false);
-      router.push(items.value[0].route);
-    }
-  }
-};
 </script>
 
 <template>
@@ -309,7 +297,6 @@ const tabChanged = (e: TabMenuChangeEvent) => {
             :readonly="areStepsReadonly"
             v-model:activeIndex="active"
             :model="items"
-            @tab-change="tabChanged"
           >
             <template #item="{ label, item, props }">
               <router-link

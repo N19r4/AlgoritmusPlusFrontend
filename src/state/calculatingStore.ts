@@ -25,6 +25,10 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     return calculatingResult.value;
   };
 
+  const clearCalculatingResult = () => {
+    calculatingResult.value = undefined;
+  };
+
   const resumeCalculating = async () => {
     isCalculating.value = true;
     calculatingResultMessage.value = {
@@ -36,11 +40,20 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     calculatingResult.value = await axios
       .post("http://localhost:7224/ResumeAlgorithm")
       .then((res) => {
-        calculatingResultMessage.value = {
-          severity: "success",
-          summary: "Success",
-          detail: "Calculation finished successfully.",
-        };
+        if (res.data === "Calculations stopped") {
+          calculatingResultMessage.value = {
+            severity: "warn",
+            summary: "Stopped",
+            detail: "Calculation stopped.",
+          };
+        } else {
+          calculatingResultMessage.value = {
+            severity: "success",
+            summary: "Success",
+            detail: "Calculation finished successfully.",
+          };
+        }
+
         return res.data;
       })
       .catch((error: AxiosError) => {
@@ -48,7 +61,7 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
           calculatingResultMessage.value = {
             severity: "error",
             summary: "Error",
-            detail: "error",
+            detail: `${error.response.data}`,
           };
         }
       });
@@ -67,11 +80,20 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     calculatingResult.value = await axios
       .post("http://localhost:7224/RunAlgorithm", payload)
       .then((res) => {
-        calculatingResultMessage.value = {
-          severity: "success",
-          summary: "Success",
-          detail: "Calculation finished successfully.",
-        };
+        if (res.data === "Calculations stopped") {
+          calculatingResultMessage.value = {
+            severity: "warn",
+            summary: "Stopped",
+            detail: "Calculation stopped.",
+          };
+        } else {
+          calculatingResultMessage.value = {
+            severity: "success",
+            summary: "Success",
+            detail: "Calculation finished successfully.",
+          };
+        }
+
         return res.data;
       })
       .catch((error: AxiosError) => {
@@ -79,20 +101,18 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
           calculatingResultMessage.value = {
             severity: "error",
             summary: "Error",
-            detail: "error",
+            detail: `${error.response.data}`,
           };
         }
       });
     isCalculating.value = false;
   };
 
-  const pauseCalculating = () => {
+  const pauseCalculating = async () => {
+    calculatingResult.value = await axios.post(
+      `http://localhost:7224/StopCallcultions`
+    );
     isCalculating.value = false;
-    calculatingResultMessage.value = {
-      severity: "warn",
-      summary: "Paused",
-      detail: "Calculation paused.",
-    };
   };
   return {
     startCalculating,
@@ -101,5 +121,6 @@ export const useCalculatingStore = defineStore("calculatingStore", () => {
     getCalculatingResultMessage,
     resumeCalculating,
     getCalculatingResult,
+    clearCalculatingResult,
   };
 });
