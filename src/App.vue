@@ -29,11 +29,19 @@ const items = ref([
     label: "Home",
     icon: "pi pi-fw pi-home",
     route: "/",
+    command: () => {
+      stepsStore.setAreStepsReadonly(false);
+      calculatingStore.pauseCalculating();
+      confirm1();
+    },
   },
   {
     label: "Documentation",
     icon: "pi pi-fw pi-file",
     route: "/documentation",
+    command: () => {
+      stepsStore.setAreStepsReadonly(false);
+    },
   },
 ]);
 
