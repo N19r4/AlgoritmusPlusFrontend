@@ -82,7 +82,9 @@ const downloadCSV = () => {
   <div class="third-step">
     <div
       v-if="
-        !calculatingResponse || calculatingResponse === 'Calculations stopped'
+        !calculatingResponse ||
+        calculatingResponse === 'Calculations stopped' ||
+        calculatingResponse.data === 'Calculations stopped'
       "
       class="center-on-screen"
     >

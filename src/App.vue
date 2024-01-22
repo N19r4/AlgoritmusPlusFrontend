@@ -29,10 +29,15 @@ const items = ref([
     label: "Home",
     icon: "pi pi-fw pi-home",
     route: "/",
-    command: () => {
+    command: async () => {
       stepsStore.setAreStepsReadonly(false);
       calculatingStore.pauseCalculating();
-      confirm1();
+      await axios
+        .get(`http://localhost:7224/IfCalculationsFinished`)
+        .then((res) => {
+          if (!res.data) confirmResumingCalculations();
+        });
+      selectedItemsStore.setParamsForChosenAlgorithm([]);
     },
   },
   {
@@ -44,22 +49,6 @@ const items = ref([
     },
   },
 ]);
-
-const confirm2 = (tabIndex: number) => {
-  confirm.require({
-    message: "Are you sure that you want to abort calculations?",
-    header: "Abort calculations?",
-    icon: "pi pi-exclamation-triangle",
-    accept: async () => {
-      await calculatingStore.pauseCalculating();
-      await axios.post(`http://localhost:7224/CancelResuming`);
-      calculatingStore.clearCalculatingResult();
-
-      router.push(items.value[tabIndex].route);
-      stepsStore.setAreStepsReadonly(false);
-    },
-  });
-};
 
 const selectedItems: Ref<
   { name: "algorithm" | "function"; dllsNames: string[] }[]
@@ -220,7 +209,7 @@ onMounted(async () => {
   await axios
     .get(`http://localhost:7224/IfCalculationsFinished`)
     .then((res) => {
-      if (!res.data) confirm1();
+      if (!res.data) confirmResumingCalculations();
     });
 });
 
@@ -238,7 +227,7 @@ watch(
 const confirm = useConfirm();
 const toast = useToast();
 
-const confirm1 = () => {
+const confirmResumingCalculations = () => {
   confirm.require({
     message: "Last calculations were not finished. Do you want to resume?",
     header: "Resume calculations?",
