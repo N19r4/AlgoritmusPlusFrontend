@@ -111,6 +111,9 @@ watchEffect(() => {
         {
           label: "Choose functions and algorithms",
           route: "/",
+          command: () => {
+            selectedItemsStore.setParamsForChosenAlgorithm([]);
+          },
         },
         {
           label: "Enter parameters",
@@ -157,6 +160,9 @@ watchEffect(() => {
         {
           label: "Choose functions and algorithms",
           route: "/",
+          command: () => {
+            selectedItemsStore.setParamsForChosenAlgorithm([]);
+          },
         },
         {
           label: "Enter dimension",
